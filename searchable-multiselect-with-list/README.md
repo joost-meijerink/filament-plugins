@@ -6,8 +6,8 @@ This component extends Filament's Select field to provide a better user experien
 
 ## Version Compatibility
 
-- **Filament 4**: Use `v4.0.0` branch or `^4.0` version
-- **Filament 3**: Use `v3.0.0` branch or `^3.0` version
+- **Filament 4**: Use `v4` branch or `^4.0` version
+- **Filament 3**: Use `v3` branch or `^3.0` version
 
 ## Features
 
@@ -60,34 +60,34 @@ SearchableMultiSelectWithList::make('users')
 ### Advanced Usage with Dynamic Search
 
 ```php
-SearchableMultiSelectWithList::make('entities')
-    ->label('KvK Number')
-    ->placeholder('Search entities')
+SearchableMultiSelectWithList::make('products')
+    ->label('Products')
+    ->placeholder('Search products')
     ->searchable()
     ->showSearchIcon() // Shows search icon in the field
-    ->listLabel('Selected Entities')
+    ->listLabel('Selected Products')
     ->getSearchResultsUsing(function ($search) {
-        return Entity::query()
+        return Product::query()
             ->where('name', 'like', "%{$search}%")
-            ->orWhere('kvk_number', 'like', "%{$search}%")
+            ->orWhere('description', 'like', "%{$search}%")
             ->limit(20)
             ->get()
-            ->mapWithKeys(function ($entity) {
+            ->mapWithKeys(function ($product) {
                 return [
-                    $entity->id => view('components.entity-option', [
-                        'entity' => $entity,
+                    $product->id => view('components.product-option', [
+                        'product' => $product,
                     ])->render(),
                 ];
             })
             ->toArray();
     })
     ->getOptionLabelsUsing(function ($values) {
-        return Entity::whereIn('id', $values)
+        return Product::whereIn('id', $values)
             ->get()
-            ->mapWithKeys(function ($entity) {
+            ->mapWithKeys(function ($product) {
                 return [
-                    $entity->id => view('components.entity-label', [
-                        'entity' => $entity,
+                    $product->id => view('components.product-option', [
+                        'product' => $product,
                     ])->render(),
                 ];
             })
@@ -120,7 +120,7 @@ Set a label for the selected items list section.
 ```
 
 ### `showCountSelected(bool $condition = true)`
-Toggle the display of the selection count and "Deselect all" button.
+Toggle the display of the selection count next to the "Deselect all" button.
 
 ```php
 ->showCountSelected(false) // Hide the count
@@ -132,6 +132,15 @@ Show a search icon in the input field to indicate search functionality.
 ```php
 ->showSearchIcon()
 ```
+
+### `showCountInPlaceholder(bool $condition = true)`
+Show the number of selected items in the placeholder text. Default is `true`.
+
+```php
+->showCountInPlaceholder(false) // Disable count in placeholder
+```
+
+> **Note**: This feature is only available in Filament 4. In Filament 3, the placeholder cannot be dynamically updated due to Choices.js limitations.
 
 ### `allowHtml()`
 Allow HTML content in option labels (inherited from Select).
@@ -248,6 +257,61 @@ SearchableMultiSelectWithList::make('cities')
     ->disabled(fn (Get $get) => !$get('country_id'))
 ```
 
+### Custom HTML in Dropdown Results
+
+You can render custom HTML for each option in the dropdown. Create a Blade component and use it in your form field.
+
+**Blade Component** (`resources/views/components/category-option.blade.php`):
+```blade
+<div class="flex flex-col py-1">
+    <div class="font-bold text-gray-950 dark:text-white">
+        {{ $category->name }}
+    </div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">
+        {{ $category->slug }}
+    </div>
+</div>
+```
+
+**Form Field**:
+```php
+SearchableMultiSelectWithList::make('categories')
+    ->label('Categories')
+    ->placeholder('Search categories')
+    ->searchable()
+    ->showSearchIcon()
+    ->listLabel('Selected Categories')
+    ->getSearchResultsUsing(function ($search) {
+        return Category::query()
+            ->where('name', 'like', "%{$search}%")
+            ->orWhere('slug', 'like', "%{$search}%")
+            ->limit(20)
+            ->get()
+            ->mapWithKeys(function ($category) {
+                return [
+                    $category->id => view('components.category-option', [
+                        'category' => $category,
+                    ])->render(),
+                ];
+            })
+            ->toArray();
+    })
+    ->getOptionLabelsUsing(function ($values) {
+        return Category::whereIn('id', $values)
+            ->get()
+            ->mapWithKeys(function ($category) {
+                return [
+                    $category->id => view('components.category-option', [
+                        'category' => $category,
+                    ])->render(),
+                ];
+            })
+            ->toArray();
+    })
+    ->allowHtml()
+    ->reactive()
+```
+
 ## Requirements
 
 ### For v4.0.0 (Filament 4)
@@ -260,22 +324,6 @@ SearchableMultiSelectWithList::make('cities')
 - Filament 3.0 or higher
 - Laravel 10.0 or higher
 
-## Testing
-
-This package doesn't include tests yet. Contributions are welcome!
-
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please feel free to submit issues and pull requests.
-
 ## Credits
 
 - [Joost Meijerink](https://github.com/joost-meijerink)
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
